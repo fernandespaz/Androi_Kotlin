@@ -1,0 +1,54 @@
+package br.diegofernandes.opiniaodetudoo.infra.dao
+
+
+import android.content.ContentValues
+import android.content.Context
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+import br.diegofernandes.opiniaodetudoo.extension.selectAll
+import br.diegofernandes.opiniaodetudoo.model.Review
+import java.util.*
+
+/**
+ * Created by DiegoPaz on 24/09/19.
+ */
+class ReviewDAOSQLite {
+    private val dbHelper: SQLiteOpenHelper
+
+    constructor(context: Context) {
+        this.dbHelper = OpiniaoTudoDBHelper(context)
+    }
+
+    fun save(review: String) {
+        val writableDatabase = dbHelper.writableDatabase
+        writableDatabase.insert(ReviewTableInfo.TABLE_NAME, null, ContentValues().apply {
+            put(ReviewTableInfo.COLUMN_ID, UUID.randomUUID().toString())
+            put(ReviewTableInfo.COLUMN_REVIEW, review)
+        })
+        writableDatabase.close()
+    }
+
+    fun list(): List<Review> {
+        val readableDatabase = dbHelper.readableDatabase
+        val cursor = readableDatabase.selectAll(ReviewTableInfo.TABLE_NAME, arrayOf(ReviewTableInfo.COLUMN_ID, ReviewTableInfo.COLUMN_REVIEW))
+        val reviews = mutableListOf<Review>()
+        while (cursor.moveToNext()) {
+            reviews.add(createReview(cursor))
+        }
+        readableDatabase.close()
+        return reviews
+    }
+
+    fun createReview(cursor: Cursor): Review {
+        val id = cursor.getString(0)
+        val review = cursor.getString(1)
+        val title = cursor.getString(2)
+        return Review(id, review, title)
+    }
+
+    fun SQLiteDatabase.selectAll(columns: Array<String>): Cursor {
+        return this.query(ReviewTableInfo.TABLE_NAME, columns, null, null, null, null, null)
+    }
+
+}
